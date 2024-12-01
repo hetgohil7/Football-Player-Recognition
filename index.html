@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elite Football Recognition</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+      body { background-color: #000; min-height: 100vh; color: white; position: relative; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
+      body.light { background-color: #f5f5f5; color: #333; }
+      .floating-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+      .particle { position: absolute; background: rgba(255, 255, 255, 0.1); border-radius: 50%; }
+      body.light .particle { background: rgba(0, 0, 0, 0.1); }
+      .container { max-width: 1200px; margin: 0 auto; padding: 2rem; position: relative; z-index: 1; }
+      .header { text-align: center; margin-bottom: 3rem; }
+      .header h1 { font-size: 3rem; margin-bottom: 1rem; }
+      body.light .header h1 { background: linear-gradient(135deg, #333, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+      body:not(.light) .header h1 { background: linear-gradient(135deg, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+      .theme-toggle { position: absolute; top: 20px; right: 20px; display: flex; align-items: center;}
+      .toggle-icon { font-size: 2rem; cursor: pointer; color: #fff; }
+      body.light .toggle-icon { color: #333; }
+      .upload-section { max-width: 500px; margin: 0 auto 3rem; padding: 2rem; border-radius: 1rem; text-align: center; transition: all 0.3s ease; }
+      body:not(.light) .upload-section { background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); }
+      body.light .upload-section { background-color: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px); }
+      .upload-area { border-radius: 0.5rem; padding: 2rem; margin-bottom: 1rem; cursor: pointer; transition: all 0.3s ease; }
+      body:not(.light) .upload-area { border: 2px dashed rgba(255, 255, 255, 0.2); }
+      body.light .upload-area { border: 2px dashed rgba(0, 0, 0, 0.2); }
+      body:not(.light) .upload-area:hover { border-color: rgba(255, 255, 255, 0.4); background-color: rgba(255, 255, 255, 0.05); }
+      body.light .upload-area:hover { border-color: rgba(0, 0, 0, 0.4); background-color: rgba(0, 0, 0, 0.05); }
+      .upload-icon { font-size: 2rem; margin-bottom: 1rem;}
+      #imageUpload { display:none;}
+      .modal { position:fixed; top:0; left:0; width:100%; height:100%; backdrop-filter:blur(5px); display:none; justify-content:center; align-items:center; z-index:100; }
+      body:not(.light) .modal { background:rgba(0, 0, 0, 0.9); }
+      body.light .modal { background:rgba(255, 255, 255, 0.9); }
+      .modal-content { border-radius:1rem; padding:2rem; max-width:1000px; width:95%; position:relative; overflow-y: auto; max-height: 90vh; }
+      body:not(.light) .modal-content { background:rgba(20, 20, 20, 0.95); }
+      body.light .modal-content { background:rgba(245, 245, 245, 0.95); box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+      .close-modal { position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.5rem; cursor:pointer; }
+      body:not(.light) .close-modal { color:white; }
+      body.light .close-modal { color:#333; }
+      .player-info { display:flex; gap:2rem; animation: slideIn 0.5s ease-out; }
+      .image-comparison { display:flex; flex-direction: column; gap:1rem; margin-bottom:1rem; flex: 1; }
+      .image-container { position:relative; width: 100%; }
+      .image-container img { width:100%; height:300px; object-fit:cover; border-radius:0.5rem; }
+      .image-label { font-size:0.9rem; margin-bottom:0.5rem; }
+      body:not(.light) .image-label { color:rgba(255, 255, 255, 0.6); }
+      body.light .image-label { color:rgba(0, 0, 0, 0.6); }
+      .stats-grid { display:flex; justify-content:space-between; gap:1rem; margin:1rem 0; }
+      .stat-card { padding:1.5rem; border-radius:2rem; text-align:center; transition:all 0.3s ease; flex:1; }
+      body:not(.light) .stat-card { background:rgba(255, 255, 255, 0.05); }
+      body.light .stat-card { background:rgba(0, 0, 0, 0.05); }
+      body:not(.light) .stat-card:hover { background:rgba(255, 255, 255, 0.1); transform: translateY(-5px); }
+      body.light .stat-card:hover { background:rgba(0, 0, 0, 0.1); transform: translateY(-5px); }
+      .stat-value { font-size:2rem; font-weight:bold; margin-bottom:0.5rem; }
+      .stat-label { font-size:0.9rem; }
+      body:not(.light) .stat-label { color:rgba(255, 255, 255, 0.6); }
+      body.light .stat-label { color:rgba(0, 0, 0, 0.6); }
+      .clubs-list { display:flex; flex-wrap:wrap; gap:0.8rem; margin:1rem 0; }
+      .club-tag { padding:0.8em 1.2em; border-radius:2em; font-size:0.9em; transition:0.3s ease-in-out; }
+      body:not(.light) .club-tag { background:rgba(255, 255, 255, 0.1); }
+      body.light .club-tag { background:rgba(0, 0, 0, 0.1); }
+      body:not(.light) .club-tag:hover { background:rgba(255, 255, 255, 0.2); transform: scale(1.05); }
+      body.light .club-tag:hover { background:rgba(0, 0, 0, 0.2); transform: scale(1.05); }
+      .highlights { padding:1.5rem; border-radius:1rem; margin-top:1.5rem; }
+      body:not(.light) .highlights { background:rgba(255, 255, 255, 0.05); }
+      body.light .highlights { background:rgba(0, 0, 0, 0.05); }
+      .highlights h3 { margin-bottom:1rem; }
+      .highlights ul { list-style:none; }
+      .highlights li { margin-bottom:0.8rem; padding-left:1.5rem; position:relative; }
+      .highlights li::before { content:"•"; position:absolute; left:0; }
+      .match-confidence { padding:1rem; border-radius:0.5rem; text-align:center; margin:1rem 0; font-weight:bold; }
+      body:not(.light) .match-confidence { background-color:#22c95e33; color:#4ade80; }
+      body.light .match-confidence { background-color:#22c95e22; color:#22c55e; }
+      .processing { display:none; text-align:center; padding:1rem; }
+      .player-details { flex: 2; }
+      .player-name { font-size: 2.5rem; margin-bottom: 0.5rem; }
+      .player-achievements { font-size: 1.2rem; color: #888; margin-bottom: 1rem; }
+      .brief-details { padding: 1.5rem; border-radius: 1rem; margin-top: 1.5rem; }
+      body:not(.light) .brief-details { background:rgba(255, 255, 255, 0.05); }
+      body.light .brief-details { background:rgba(0, 0, 0, 0.05); }
+      .brief-details h3 { margin-bottom: 1rem; }
+      .brief-details ul { list-style: none; padding-left: 0; }
+      .brief-details li { margin-bottom: 0.8rem; padding: 0.8rem; border-radius: 0.5rem; }
+      body:not(.light) .brief-details li { background:rgba(255, 255, 255, 0.03); }
+      body.light .brief-details li { background:rgba(0, 0, 0, 0.03); }
+
+      @keyframes slideIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes pulse {
+          from { opacity:.8; }
+          to { opacity:.4; }
+      }
+
+      @media (max-width:768px) {
+          .header h1 { font-size: 2rem; }
+          .stats-grid { flex-direction: column; }
+          .player-info { flex-direction: column; }
+      }
+
+      .processing.active {
+          display:block;
+          animation: pulse 0.75s ease-in-out infinite alternate;
+      }
+
+      @keyframes clickMotion {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+      }
+
+      .toggle-icon.clicked {
+          animation: clickMotion 0.6s ease-in-out forwards;
+      }
+
+      .toggle-icon {
+          position: relative;
+      }
+
+      .toggle-icon::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          opacity: 0;
+          transition: all 0.3s ease-out;
+      }
+
+      body.light .toggle-icon::before {
+          background: rgba(0, 0, 0, 0.2);
+      }
+
+      .toggle-icon.animating::before {
+          width: 60px;
+          height: 60px;
+          opacity: 1;
+      }
+  </style>
+</head>
+<body>
+  <div class="floating-particles" id="particles"></div>
+  <div class="container">
+      <div class="header">
+          <h1>Elite Football Recognition</h1>
+          <p>Upload a player's image for instant recognition</p>
+      </div>
+
+      <div class="theme-toggle">
+          <div class="toggle-icon" id="themeToggle">⚽</div>
+      </div>
+
+      <div class="upload-section">
+          <div class="upload-area" id="uploadArea">
+              <div class="upload-icon">📷</div>
+              <p>Click or drag image to upload</p>
+              <input type="file" id="imageUpload" accept="image/*">
+          </div>
+          <div class="processing" id="processing">Processing image...</div>
+      </div>
+  </div>
+
+  <div class="modal" id="playerModal">
+      <div class="modal-content">
+          <button class="close-modal" onclick="closeModal()">×</button>
+          <h2>Player Recognized!</h2>
+          <div class="player-info">
+              <div class="image-comparison">
+                  <div class="image-container">
+                      <div class="image-label">Uploaded Image</div>
+                      <img id="uploadedImage" src="" alt="Uploaded">
+                  </div>
+                  <div class="image-container">
+                      <div class="image-label">Database Match</div>
+                      <img id="databaseImage" src="" alt="Database Match">
+                  </div>
+                  <div class="match-confidence">Match Confidence: <span id="matchConfidence"></span></div>
+              </div>
+              <div class="player-details">
+                  <h2 id="playerName" class="player-name"></h2>
+                  <p id="playerAchievements" class="player-achievements"></p>
+                  <div class="stats-grid">
+                      <div class="stat-card">
+                          <div class="stat-value" id="playerGoals"></div>
+                          <div class="stat-label">Goals</div>
+                      </div>
+                      <div class="stat-card">
+                          <div class="stat-value" id="playerAssists"></div>
+                          <div class="stat-label">Assists</div>
+                      </div>
+                      <div class="stat-card">
+                          <div class="stat-value" id="playerTrophies"></div>
+                          <div class="stat-label">Trophies</div>
+                      </div>
+                  </div>
+
+                  <div class="brief-details">
+                      <h3>Key Player Details</h3>
+                      <ul id="playerBriefDetails"></ul>
+                  </div>
+
+                  <h3>Career Path</h3>
+                  <div class="clubs-list" id="playerClubs"></div>
+
+                  <div class="highlights">
+                      <h3>Career Highlights</h3>
+                      <ul id="playerHighlights"></ul>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+<script>
+  function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 20; i++) {
+          const particle = document.createElement('div');
+          particle.className = 'particle';
+          const size = Math.random() * (10 - 5) + 5;
+          
+          particle.style.width = `${size}px`;
+          particle.style.height = `${size}px`;
+          particle.style.left = `${Math.random() * 100}%`;
+          particle.style.top = `${Math.random() * 100}%`;
+          
+          particle.style.animation = `float ${Math.random() * 5 + 5}s linear infinite`;
+          particle.style.animationDelay = `${Math.random() * 5}s`;
+          
+          container.appendChild(particle);
+      }
+  }
+
+  const playersData = {
+      "Lionel Messi": {
+          achievements: "8x Ballon d'Or Winner, FIFA World Cup Winner 2022",
+          goals: "821",
+          assists: "361",
+          trophies: "44",
+          clubs: ["Barcelona", "PSG", "Inter Miami"],
+          highlights: [
+              "World Cup Winner 2022",
+              "Copa America Winner 2021",
+              "All-time top scorer in La Liga (474 goals)",
+              "Most goals in a calendar year (91 in 2012)",
+              "Most Ballon d'Or wins (8)"
+          ],
+          briefDetails: [
+              "Born on June 24, 1987, in Rosario, Argentina",
+              "Height: 1.70 m (5 ft 7 in)",
+              "Position: Forward / Attacking Midfielder",
+              "International: 178 caps, 104 goals for Argentina",
+              "Known for his dribbling skills and vision on the field"
+          ],
+          confidence: "99%",
+          image: "https://example.com/messi.jpg"
+      },
+      "Cristiano Ronaldo": {
+          achievements: "5x Ballon d'Or Winner, 5x Champions League Winner",
+          goals: "850",
+          assists: "230",
+          trophies: "34",
+          clubs: ["Sporting CP", "Manchester United", "Real Madrid", "Juventus", "Al Nassr"],
+          highlights: [
+              "All-time top international goalscorer (128 goals)",
+              "Most Champions League goals (140)",
+              "Most career goals in football history",
+              "5x Champions League winner",
+              "Euro 2016 Winner with Portugal"
+          ],
+          briefDetails: [
+              "Born on February 5, 1985, in Funchal, Madeira, Portugal",
+              "Height: 1.87 m (6 ft 2 in)",
+              "Position: Forward",
+              "International: 200 caps, 128 goals for Portugal",
+              "Known for his athleticism and goal-scoring ability"
+          ],
+          confidence: "98%",
+          image: "https://example.com/ronaldo.jpg"
+      },
+      "Kylian Mbappé": {
+          achievements: "World Cup Winner 2018, 5x Ligue 1 Winner",
+          goals: "250",
+          assists: "116",
+          trophies: "14",
+          clubs: ["Monaco", "PSG"],
+          highlights: [
+              "World Cup Winner 2018",
+              "Youngest French player to score in World Cup",
+              "Ligue 1 top scorer for 5 consecutive seasons",
+              "Second most expensive transfer in history",
+              "Fastest player to reach 40 Champions League goals"
+          ],
+          briefDetails: [
+              "Born on December 20, 1998, in Paris, France",
+              "Height: 1.78 m (5 ft 10 in)",
+              "Position: Forward",
+              "International: 72 caps, 40 goals for France",
+              "Known for his explosive speed and finishing"
+          ],
+          confidence: "97%",
+          image: "https://example.com/mbappe.jpg"
+      },
+      "Kevin De Bruyne": {
+          achievements: "3x Premier League POTY, Champions League Winner 2023",
+          goals: "154",
+          assists: "398",
+          trophies: "18",
+          clubs: ["Genk", "Chelsea", "Werder Bremen", "Wolfsburg", "Manchester City"],
+          highlights: [
+              "Champions League Winner 2023",
+              "Premier League assists record holder",
+              "Treble Winner with Man City 2023",
+              "Most assists in a Premier League season (20)",
+              "4x PFA Team of the Year"
+          ],
+          briefDetails: [
+              "Born on June 28, 1991, in Drongen, Belgium",
+              "Height: 1.81 m (5 ft 11 in)",
+              "Position: Midfielder",
+              "International: 99 caps, 26 goals for Belgium",
+              "Known for his vision and passing ability"
+          ],
+          confidence: "96%",
+          image: "https://example.com/kdb.jpg"
+      },
+      "Neymar Jr": {
+          achievements: "Olympic Gold Medalist, Champions League Winner",
+          goals: "293",
+          assists: "193",
+          trophies: "24",
+          clubs: ["Santos", "Barcelona", "PSG", "Al Hilal"],
+          highlights: [
+              "Olympic Gold Medal 2016",
+              "Champions League Winner 2015",
+              "Copa Libertadores Winner 2011",
+              "Most expensive transfer in history (222M €)",
+              "Brazil's second all-time top scorer"
+          ],
+          briefDetails: [
+              "Born on February 5, 1992, in Mogi das Cruzes, Brazil",
+              "Height: 1.75 m (5 ft 9 in)",
+              "Position: Forward",
+              "International: 124 caps, 77 goals for Brazil",
+              "Known for his dribbling skills and creativity"
+          ],
+          confidence: "97%",
+          image: "https://example.com/neymar.jpg"
+      }
+  };
+
+  function handleImage(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          document.getElementById('uploadedImage').src = e.target.result;
+          document.getElementById('processing').classList.add('active');
+
+          gsap.to(".processing", {
+              opacity: 0.5,
+              yoyo: true,
+              repeat: -1,
+              duration: 0.75
+          });
+
+          setTimeout(() => {
+              document.getElementById('processing').classList.remove('active');
+              gsap.killTweensOf(".processing");
+              
+              const players = Object.keys(playersData);
+              const recognizedPlayer = players[Math.floor(Math.random() * players.length)];
+              
+              recognizePlayer(recognizedPlayer);
+              document.getElementById('playerModal').style.display = 'flex';
+              
+              gsap.from(".modal-content", {
+                  duration: 0.5,
+                  y: -50,
+                  opacity: 0,
+                  ease: "power2.out"
+              });
+          }, 1500);
+      };
+      reader.readAsDataURL(file);
+  }
+
+  function recognizePlayer(player) {
+      const playerData = playersData[player];
+      if (playerData) {
+          document.getElementById('playerName').textContent = player;
+          document.getElementById('playerAchievements').textContent = playerData.achievements;
+          document.getElementById('playerGoals').textContent = playerData.goals;
+          document.getElementById('playerAssists').textContent = playerData.assists;
+          document.getElementById('playerTrophies').textContent = playerData.trophies;
+          document.getElementById('matchConfidence').textContent = playerData.confidence;
+          document.getElementById('databaseImage').src = playerData.image;
+
+          document.getElementById('playerClubs').innerHTML = playerData.clubs
+              .map(club => `<span class='club-tag'>${club}</span>`)
+              .join('');
+
+          document.getElementById('playerHighlights').innerHTML = playerData.highlights
+              .map(highlight => `<li>${highlight}</li>`)
+              .join('');
+
+          document.getElementById('playerBriefDetails').innerHTML = playerData.briefDetails
+              .map(detail => `<li>${detail}</li>`)
+              .join('');
+
+          gsap.from("#playerName, #playerAchievements", {
+              opacity: 0,
+              y: 20,
+              duration: 0.5,
+              stagger: 0.1
+          });
+
+          gsap.from(".stat-card", {
+              scale: 0.9,
+              opacity: 0,
+              duration: 0.5,
+              stagger: 0.1
+          });
+
+          gsap.from(".club-tag", {
+              opacity: 0,
+              y: 20,
+              duration: 0.5,
+              stagger: 0.1
+          });
+
+          gsap.from(".highlights li, .brief-details li", {
+              opacity: 0,
+              x: -20,
+              duration: 0.5,
+              stagger: 0.1
+          });
+      }
+  }
+
+  function closeModal() {
+      gsap.to(".modal-content", {
+          duration: 0.3,
+          y: -50,
+          opacity: 0,
+          ease: "power2.in",
+          onComplete: function() {
+              document.getElementById('playerModal').style.display = 'none';
+              document.getElementById('imageUpload').value = '';
+              gsap.set(".modal-content", { clearProps: "all" });
+          }
+      });
+  }
+
+  const themeToggle = document.getElementById('themeToggle');
+  themeToggle.addEventListener('click', () => {
+      themeToggle.classList.add("clicked");
+      setTimeout(() => themeToggle.classList.remove("clicked"), 600);
+      document.body.classList.toggle('light');
+
+      themeToggle.classList.add('animating');
+      setTimeout(() => {
+          themeToggle.classList.remove('animating');
+      }, 300);
+  });
+
+  createParticles();
+
+  gsap.to(".particle", {
+      y: "random(-100, 100)",
+      x: "random(-100, 100)",
+      duration: "random(10, 20)",
+      repeat: -1,
+      yoyo: true,
+      ease: "none",
+      stagger: {
+          amount: 10,
+          from: "random"
+      }
+  });
+
+  const uploadArea = document.getElementById('uploadArea');
+  uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = document.body.classList.contains('light') ? 
+          'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.6)';
+  });
+
+  uploadArea.addEventListener('dragleave', () => {
+      uploadArea.style.borderColor = document.body.classList.contains('light') ? 
+          'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)';
+  });
+
+  uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.style.borderColor = document.body.classList.contains('light') ? 
+          'rgba(0, 0, 0, 0.2)' : 'rgba(255, 255, 255, 0.2)';
+      
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+          handleImage(file);
+      }
+  });
+
+  uploadArea.addEventListener('click', () => document.getElementById('imageUpload').click());
+  document.getElementById('imageUpload').addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+          handleImage(e.target.files[0]);
+      }
+  });
+</script>
+</body>
+</html>
